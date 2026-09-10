@@ -229,6 +229,12 @@
 .viewer:fullscreen .viewer-panel, .viewer.is-fullscreen .viewer-panel {
   width: min(40%, 560px);
 }
+/* The split card keeps its half in fullscreen too (the cap above would leave a
+   dead band between the 3D view and the frame on a wide screen). */
+.viewer:fullscreen[data-panel="split"] .viewer-panel,
+.viewer.is-fullscreen[data-panel="split"] .viewer-panel {
+  width: var(--split);
+}
 
 /* Narrow screens: taller card so the panel and the timeline never collide,
    and a panel that stacks its two images. */
@@ -244,7 +250,9 @@
 
   /* Split card stacks: 3D on top, the re-rendered frame below. */
   .viewer[data-panel="split"] .viewer-3d { right: 0; bottom: 46%; }
-  .viewer[data-panel="split"] .viewer-panel {
+  .viewer[data-panel="split"] .viewer-panel,
+  .viewer:fullscreen[data-panel="split"] .viewer-panel,
+  .viewer.is-fullscreen[data-panel="split"] .viewer-panel {
     top: auto;
     left: 0;
     width: auto;

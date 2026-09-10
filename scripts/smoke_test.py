@@ -252,6 +252,18 @@ def run_desktop(browser):
     check(wild.locator(".viewer-camera").evaluate("b => b.classList.contains('active')"),
           "wild: reset returns to the capture camera")
     page.screenshot(path=f"{OUT}/desktop_wild.png")
+    # Fullscreen keeps the half-and-half split: no dead band between the 3D
+    # view and the re-rendered frame.
+    wild.locator(".viewer-fullscreen").click()
+    time.sleep(0.6)
+    view3d = wild.locator(".viewer-3d").bounding_box()
+    panel = wild.locator(".viewer-panel").bounding_box()
+    check(abs(view3d["x"] + view3d["width"] - panel["x"]) <= 1
+          and abs(panel["width"] - view3d["width"]) <= 2,
+          f"wild fullscreen: 3D view and panel meet, each half the width "
+          f"({view3d['width']:.0f} | {panel['width']:.0f})")
+    wild.locator(".viewer-fullscreen").click()
+    time.sleep(0.5)
 
     # The agentic timelapse diagram: image decoded, video playing, side by side.
     page.evaluate("document.querySelector('#timelapse-section').scrollIntoView({block: 'center'})")
