@@ -34,9 +34,10 @@ def wait_live(page, carousel, index):
     page.wait_for_function(
         f"(() => {{ const v = document.querySelector('{carousel} .viewer.is-live');"
         f" return v && v.dataset.index === '{index}'; }})()", timeout=60000)
+    # Null-safe: the live slide can be mid-swap for a tick.
     page.wait_for_function(
-        f"document.querySelector('{carousel} .viewer.is-live .viewer-status')"
-        ".textContent === ''", timeout=60000)
+        f"(() => {{ const s = document.querySelector('{carousel} .viewer.is-live .viewer-status');"
+        " return s && s.textContent === ''; })()", timeout=60000)
 
 
 def render(page, carousel, index):
