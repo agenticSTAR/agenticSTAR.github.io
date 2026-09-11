@@ -14,7 +14,9 @@ export async function mountCarousel(carousel) {
   const note = carousel.querySelector('.carousel-note');
   const template = document.getElementById('viewer-template');
 
-  const response = await fetch(assets + 'index.json');
+  // The example list changes with every rebake; revalidate it rather than
+  // trusting a cached copy (GitHub Pages serves it with max-age=600).
+  const response = await fetch(assets + 'index.json', { cache: 'no-cache' });
   if (!response.ok) {
     note.textContent =
       `Viewer assets are not built yet (${assets}index.json missing).`;
