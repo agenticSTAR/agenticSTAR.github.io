@@ -90,9 +90,8 @@
   pointer-events: none;
 }
 /* A smooth bake has pictures at its keyframes only; in between, the panel
-   holds the last one, dimmed. */
-.viewer-panel { transition: opacity .2s; }
-.viewer-panel.is-between { opacity: .55; }
+   simply holds the last one (`.is-between` is set, but nothing dims: a fading
+   photo reads as an exposure change). */
 .viewer-panel figure { min-width: 0; margin: 0; }
 .viewer-panel figure + figure { border-left: 1px solid var(--border); }
 .viewer-panel canvas {
