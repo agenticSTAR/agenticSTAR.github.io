@@ -37,7 +37,7 @@ CAROUSELS = {
     "#examples-wild": {
         "titles": ["Garden shears", "Briefcase", "Grind", "Corkscrew", "Scissors",
                    "Butterfly knife", "Box", "Spoon"],
-        "frames": [22, 31, 30, 22, 23, 21, 22, 11],   # keyframes per run
+        "frames": [22, 31, 30, 22, 23, 21, 22, 22],   # keyframes per run
         "panel_width": None,                  # 720 px long side, portrait or landscape
         "articulated": True,
     },
