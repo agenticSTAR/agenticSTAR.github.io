@@ -18,20 +18,21 @@ OUT = sys.argv[2] if len(sys.argv) > 2 else tempfile.mkdtemp(prefix="projp-smoke
 problems = []
 
 CAROUSELS = {
+    # ARCTIC and HOT3D are interpolated between the runs' keyframes (every
+    # 10th capture frame) and play at the capture's 30 fps; pictures at the
+    # keyframes only.
     "#examples-arctic": {
         "titles": ["Notebook", "Waffle iron", "Ketchup", "Box", "Phone"],
-        "frames": 30,
-    },
-    "#examples-arctic-smooth": {
-        "titles": ["Notebook", "Waffle iron", "Ketchup", "Box", "Phone"],
-        "frames": 291,                        # every ARCTIC frame between the keyframes
+        "frames": 291,
         "keyframes": 30,
         "joints": True,                       # the hinge, as in the wild cards
     },
     "#examples-hot3d": {
         "titles": ["Coffee pot", "Vase", "Bottle (ranch)", "Mug (patterned)",
                    "Mug (white)", "Birdhouse", "Dumbbell (5 lb)"],
-        "frames": 15,
+        "frames": 141,
+        "keyframes": 15,
+        "joints": True,                       # the coffee pot's collar turns
     },
     "#examples-wild": {
         "titles": ["Garden shears", "Grind", "Corkscrew", "Scissors",
@@ -100,7 +101,7 @@ def walk_carousel(page, carousel, spec, tag):
           f"{tag}: playback advances ({count0!r} -> {count1!r})")
     if spec.get("keyframes"):
         # A smooth bake: 30 fps playback, a tick per keyframe, and the panel
-        # holds (dimmed) between keyframes.
+        # holds the last keyframe's picture between keyframes.
         advanced = (int(count1.split("/")[0]) - int(count0.split("/")[0])) % n_frames
         check(advanced >= 20, f"{tag}: plays at ~30 fps ({advanced} frames in 1.2 s)")
         check(slide.locator("datalist option").count() == spec["keyframes"]
@@ -186,24 +187,15 @@ def run_desktop(browser):
 
     # ARCTIC first.
     page.evaluate("document.querySelector('#examples-arctic').scrollIntoView({block: 'center'})")
-    wait_live(page, "#examples-arctic")
+    wait_live(page, "#examples-arctic", timeout=90000)
     walk_carousel(page, "#examples-arctic", CAROUSELS["#examples-arctic"], "arctic")
     page.screenshot(path=f"{OUT}/desktop_arctic.png")
 
-    # The interpolated ARCTIC carousel sits between ARCTIC and HOT3D.
-    page.evaluate("document.querySelector('#examples-arctic-smooth').scrollIntoView({block: 'center'})")
-    wait_live(page, "#examples-arctic-smooth", timeout=90000)
-    check(page.locator("#examples-arctic .viewer.is-live").count() == 0,
-          "arctic-smooth: taking the renderer detaches the ARCTIC slide")
-    walk_carousel(page, "#examples-arctic-smooth", CAROUSELS["#examples-arctic-smooth"],
-                  "arctic-smooth")
-    page.screenshot(path=f"{OUT}/desktop_arctic_smooth.png")
-
     # Scrolling down hands the renderer to the HOT3D carousel.
     page.evaluate("document.querySelector('#examples-hot3d').scrollIntoView({block: 'center'})")
-    wait_live(page, "#examples-hot3d")
-    check(page.locator("#examples-arctic-smooth .viewer.is-live").count() == 0,
-          "hot3d: taking the renderer detaches the interpolated ARCTIC slide")
+    wait_live(page, "#examples-hot3d", timeout=90000)
+    check(page.locator("#examples-arctic .viewer.is-live").count() == 0,
+          "hot3d: taking the renderer detaches the ARCTIC slide")
     walk_carousel(page, "#examples-hot3d", CAROUSELS["#examples-hot3d"], "hot3d")
     hot3d = live_slide(page, "#examples-hot3d")
     check(hot3d.locator(".viewer-source").text_content().startswith("HOT3D clip-"),
@@ -341,7 +333,6 @@ def run_mobile(browser):
     page.wait_for_selector("#examples-hot3d .viewer", state="attached", timeout=30000)
     slide = None
     for carousel, tag in (("#examples-arctic", "arctic"),
-                          ("#examples-arctic-smooth", "arctic-smooth"),
                           ("#examples-hot3d", "hot3d"), ("#examples-wild", "wild")):
         page.evaluate(f"document.querySelector('{carousel}').scrollIntoView({{block: 'center'}})")
         wait_live(page, carousel, timeout=90000)

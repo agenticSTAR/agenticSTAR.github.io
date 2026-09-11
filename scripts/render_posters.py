@@ -26,7 +26,7 @@ WEBP_QUALITY = 82
 
 # The page's own selectors: assets/<name>/ -> #examples-<name>
 def carousel_for(asset_dir):
-    # assets/arctic_smooth -> #examples-arctic-smooth
+    # assets/some_name -> #examples-some-name
     return "#examples-" + os.path.basename(os.path.normpath(asset_dir)).replace("_", "-")
 
 

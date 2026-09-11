@@ -601,8 +601,8 @@ export class ArcticViewer {
   // silhouette layer), so a playback tick is two drawImage calls per canvas.
   showPanelImages() {
     const shown = this.panelFrame(this.frame);
-    // Between keyframes the panel holds the last picture, dimmed: the 3D view
-    // moves on, the photo does not.
+    // Between keyframes the panel holds the last picture: the 3D view moves
+    // on, the photo does not.
     this.$('.viewer-panel').classList.toggle('is-between', shown !== this.frame);
     const photo = this.panel.frame[shown];
     const tint = this.panel.tint[shown];
