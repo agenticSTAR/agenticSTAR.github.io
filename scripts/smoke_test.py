@@ -1,7 +1,8 @@
 """Headless smoke test of the project page (pip install playwright && playwright install chromium).
 
 Usage: python scripts/smoke_test.py [URL] [SCREENSHOT_DIR]
-with the page served locally, e.g. `python -m http.server 8765`.
+with the page served locally by `python scripts/serve.py 8765` (byte ranges: the
+timelapse video must be seekable).
 
 Checks: all three carousels (ARCTIC, HOT3D, in the wild) load every slide, play,
 hand the one shared WebGL renderer back and forth, fullscreen toggles, the
@@ -307,7 +308,30 @@ def run_desktop(browser):
     video = page.locator(".timelapse-video").bounding_box()
     check(frames["x"] + frames["width"] < video["x"] and abs(frames["width"] - video["width"]) <= 2,
           f"timelapse: frames left of the video, equal widths ({frames['width']:.0f} | {video['width']:.0f})")
+    # Its timeline (js/timelapse.js): one slider step per video frame, along
+    # the video's bottom edge; scrubbing pauses and seeks, play resumes.
+    bar = page.locator(".timelapse-timeline").bounding_box()
+    check(bar["x"] > video["x"] and bar["x"] + bar["width"] < video["x"] + video["width"]
+          and bar["y"] > video["y"] + video["height"] / 2
+          and bar["y"] + bar["height"] < video["y"] + video["height"],
+          "timelapse: timeline sits inside the video's bottom edge")
+    slider = page.locator(".timelapse-timeline .viewer-slider")
+    check(slider.get_attribute("max") == "16", "timelapse: slider has one step per frame (17 frames)")
+    check(page.evaluate("document.querySelector('.timelapse-clip').classList.contains('is-playing')"),
+          "timelapse: timeline shows the playing state")
+    slider.evaluate("s => { s.value = 9; s.dispatchEvent(new Event('input', {bubbles: true})); }")
+    page.wait_for_function("document.querySelector('.timelapse-video').seeking === false", timeout=10000)
+    time.sleep(0.3)
+    clip_time = page.evaluate("document.querySelector('.timelapse-video').currentTime")
+    check(page.evaluate("document.querySelector('.timelapse-video').paused") and abs(clip_time - 3.8) < 0.05
+          and page.locator(".timelapse-timeline .viewer-count").text_content().strip() == "10 / 17",
+          f"timelapse: scrubbing pauses and seeks to the frame (t={clip_time:.2f}, "
+          f"'{page.locator('.timelapse-timeline .viewer-count').text_content().strip()}')")
     page.screenshot(path=f"{OUT}/desktop_timelapse.png")
+    page.locator(".timelapse-timeline .viewer-play").click()
+    time.sleep(0.5)
+    check(not page.evaluate("document.querySelector('.timelapse-video').paused"),
+          "timelapse: play resumes after a scrub")
 
     # Back up: ARCTIC takes the renderer again, on the slide it was left at.
     page.evaluate("document.querySelector('#examples-arctic').scrollIntoView({block: 'center'})")

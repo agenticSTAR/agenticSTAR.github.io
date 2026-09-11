@@ -104,6 +104,11 @@ h2 {
   border-radius: 10px;
   background: var(--panel);
 }
+/* The video wears the viewer cards' timeline (viewer.css .viewer-timeline,
+   accent slider) along its bottom edge, inset like on the cards. Playing state
+   comes from the same is-playing class, set by js/timelapse.js. */
+.timelapse-clip { position: relative; min-width: 0; }
+.timelapse-clip.is-playing .viewer-play::before { content: "❚❚"; font-size: 12px; }
 /* The arrow: a line with a head, in a dim orange. */
 .timelapse { --arrow: #b8792f; }
 .timelapse-arrow {
