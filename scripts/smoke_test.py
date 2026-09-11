@@ -28,16 +28,16 @@ CAROUSELS = {
         "joints": True,                       # the hinge, as in the wild cards
     },
     "#examples-hot3d": {
-        "titles": ["Coffee pot", "Vase", "Bottle (ranch)", "Mug (patterned)",
-                   "Mug (white)", "Birdhouse", "Dumbbell (5 lb)"],
+        "titles": ["Coffee pot", "Vase", "Birdhouse", "Mug (patterned)",
+                   "Mug (white)", "Dumbbell (5 lb)"],
         "frames": 141,
         "keyframes": 15,
         "joints": True,                       # the coffee pot's collar turns
     },
     "#examples-wild": {
-        "titles": ["Garden shears", "Grind", "Corkscrew", "Scissors",
+        "titles": ["Garden shears", "Briefcase", "Grind", "Corkscrew", "Scissors",
                    "Butterfly knife", "Box", "Spoon"],
-        "frames": [22, 30, 22, 23, 21, 22, 11],   # keyframes per run
+        "frames": [22, 31, 30, 22, 23, 21, 22, 11],   # keyframes per run
         "panel_width": None,                  # 720 px long side, portrait or landscape
         "articulated": True,
     },
@@ -61,9 +61,10 @@ def live_slide(page, carousel):
 
 def wait_live(page, carousel, timeout=30000):
     page.wait_for_selector(f"{carousel} .viewer.is-live", timeout=timeout)
+    # Null-safe: the live slide can be mid-swap for a tick.
     page.wait_for_function(
-        f"document.querySelector('{carousel} .viewer.is-live .viewer-status')"
-        ".textContent === ''", timeout=timeout)
+        f"(() => {{ const s = document.querySelector('{carousel} .viewer.is-live .viewer-status');"
+        " return s && s.textContent === ''; })()", timeout=timeout)
 
 
 def walk_carousel(page, carousel, spec, tag):
