@@ -217,9 +217,43 @@ export class ArcticViewer {
         `Ours, re-rendered into the frame${parts ? ` · ${parts} parts, one colour each` : ''}`;
     }
     this.$('.viewer-slider').max = this.meta.n_frames - 1;
+    this.markKeyframes();
     this.setFrame(0);
     this.status('');
     this.preparePanelImages();
+  }
+
+  // A smooth bake (meta.keyframes) interpolates the 3D between the run's
+  // keyframes and has a picture only at those: tick them under the slider so
+  // the scrubber shows where the images are.
+  markKeyframes() {
+    const slider = this.$('.viewer-slider');
+    slider.parentElement.querySelector('datalist')?.remove();
+    slider.removeAttribute('list');
+    const keyframes = this.meta.keyframes;
+    if (!keyframes || keyframes.length >= this.meta.n_frames) return;
+    const list = document.createElement('datalist');
+    list.id = `keyframes-${Math.random().toString(36).slice(2, 8)}`;
+    for (const index of keyframes) {
+      const option = document.createElement('option');
+      option.value = index;
+      list.appendChild(option);
+    }
+    slider.after(list);
+    slider.setAttribute('list', list.id);
+  }
+
+  // The frame whose picture the panel shows: the frame itself, or (a smooth
+  // bake) the last keyframe at or before it.
+  panelFrame(frame) {
+    const keyframes = this.meta.keyframes;
+    if (!keyframes) return frame;
+    let shown = keyframes[0];
+    for (const index of keyframes) {
+      if (index > frame) break;
+      shown = index;
+    }
+    return shown;
   }
 
   // The floor grid: perpendicular to `up`, just under the scene's lowest point.
@@ -553,7 +587,10 @@ export class ArcticViewer {
       layer.mesh.geometry.computeVertexNormals();
     }
     this.$('.viewer-slider').value = this.frame;
-    this.$('.viewer-count').textContent = `${this.frame + 1} / ${n}`;
+    // Figure spaces pad the counter to the total's width, so it never jitters
+    // or wraps as the digits change (291-frame smooth bakes).
+    this.$('.viewer-count').textContent =
+      `${String(this.frame + 1).padStart(String(n).length, ' ')} / ${n}`;
     this.updateJoints();
     if (this.follow) this.applyCameraFrame();
     this.showPanelImages();
@@ -563,8 +600,12 @@ export class ArcticViewer {
   // Every frame is decoded ONCE into ImageBitmaps (photo + pre-tinted
   // silhouette layer), so a playback tick is two drawImage calls per canvas.
   showPanelImages() {
-    const photo = this.panel.frame[this.frame];
-    const tint = this.panel.tint[this.frame];
+    const shown = this.panelFrame(this.frame);
+    // Between keyframes the panel holds the last picture, dimmed: the 3D view
+    // moves on, the photo does not.
+    this.$('.viewer-panel').classList.toggle('is-between', shown !== this.frame);
+    const photo = this.panel.frame[shown];
+    const tint = this.panel.tint[shown];
     const observed = this.$('.viewer-observed');
     const overlay = this.$('.viewer-overlay');
     if (!photo) return;
@@ -624,8 +665,11 @@ export class ArcticViewer {
 
     const rendered = this.meta.panel === 'render';
     let done = 0;
-    const queue = [];
-    for (let f = 0; f < total; f++) queue.push(f);
+    // Only the frames that have a picture (all of them, or the keyframes).
+    const queue = this.meta.keyframes
+      ? [...this.meta.keyframes]
+      : Array.from({ length: total }, (_, f) => f);
+    const wanted = queue.length;
     const workers = Array.from({ length: 4 }, async () => {
       while (queue.length) {
         const frame = queue.shift();
@@ -637,12 +681,12 @@ export class ArcticViewer {
           ]);
           this.panel.frame[frame] = photo;
           this.panel.tint[frame] = rendered ? layer : await tintLayer(layer);
-          if (frame === this.frame) this.showPanelImages();
+          if (frame === this.panelFrame(this.frame)) this.showPanelImages();
         } catch (error) {
           console.warn(error);
         }
         done += 1;
-        this.status(done < total ? `frames ${Math.round(100 * done / total)}%` : '');
+        this.status(done < wanted ? `frames ${Math.round(100 * done / wanted)}%` : '');
       }
     });
     await Promise.all(workers);
