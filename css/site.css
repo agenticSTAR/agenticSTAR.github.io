@@ -60,6 +60,32 @@ a:hover { text-decoration: underline; }
   font-size: 15px;
 }
 .button:hover { text-decoration: none; border-color: #4d5760; background: #2a3037; }
+.blog-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-color: rgba(245, 209, 184, .38);
+  background: linear-gradient(135deg, rgba(245, 209, 184, .11), var(--surface) 72%);
+}
+.blog-button::after {
+  content: "↗";
+  color: var(--accent);
+  font-size: 13px;
+  line-height: 1;
+}
+.button-tag {
+  padding: 2px 5px;
+  border: 1px solid rgba(245, 209, 184, .35);
+  color: var(--accent);
+  font-size: 9px;
+  line-height: 1.25;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.blog-button:hover {
+  border-color: rgba(245, 209, 184, .68);
+  background: linear-gradient(135deg, rgba(245, 209, 184, .16), #2a3037 72%);
+}
 
 /* ── sections ── */
 main section { padding: clamp(28px, 5vw, 48px) 0 0; }
